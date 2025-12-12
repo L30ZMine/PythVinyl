@@ -154,7 +154,7 @@ class VinylApp {
     updateTitleMarquee(text, isPlaying) {
         if (this.titleInterval) clearInterval(this.titleInterval);
         if (!isPlaying) {
-            document.title = "Vinyl Stack";
+            document.title = "PythVinyl";
             return;
         }
         let titleText = `${text}  *** `;
