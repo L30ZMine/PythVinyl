@@ -40,7 +40,7 @@ It combines a **Python** backend (for robust file scanning, metadata extraction,
 ### 1\. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/PythVinyl.git
+git clone https://github.com/L30ZMine/PythVinyl.git
 cd PythVinyl
 ```
 
