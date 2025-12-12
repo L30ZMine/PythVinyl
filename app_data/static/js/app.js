@@ -23,6 +23,7 @@ class VinylApp {
         this.sortAscending = true; 
         this.groupingMode = 'FLOW'; 
         this.scrollInverted = false;
+        this.currentFilter = 'ALL'; // 'ALL', 'LOCAL', 'SPOTIFY'
         
         this.hasPlayed = false;
         this.libraryLoaded = false;
@@ -261,7 +262,13 @@ class VinylApp {
         }
     }
 
-    setupUIEvents() {
+setupUIEvents() {
+        if(document.getElementById('filter-all')) {
+            document.getElementById('filter-all').onclick = () => this.reloadLibrary('ALL');
+            document.getElementById('filter-local').onclick = () => this.reloadLibrary('LOCAL');
+            document.getElementById('filter-spotify').onclick = () => this.reloadLibrary('SPOTIFY');
+        }
+
         this.ui.navBtns.forEach(btn => {
             btn.onclick = () => {
                 if(btn.classList.contains('disabled')) return;
@@ -310,6 +317,7 @@ class VinylApp {
 
         this.ui.cratePrev.onclick = () => this.cycleCrate(-1);
         this.ui.crateNext.onclick = () => this.cycleCrate(1);
+        
         document.getElementById('btn-play').onclick = () => {
             this.player.pause();
             
@@ -341,19 +349,54 @@ class VinylApp {
         document.getElementById('btn-prev').onclick = () => this.player.prevTrack(); 
 
         
-        let isDragging = false; let startY = 0; let vol = 0.5;
+        let isDragging = false; let startY = 0; let vol = 0.5;let lastVolTime = 0; // NEW: Timestamp for throttling
+
         if (this.ui.volKnob) {
             this.ui.volKnob.onmousedown = (e) => { isDragging = true; startY = e.clientY; };
             window.addEventListener('mouseup', () => { isDragging = false; });
+            
             window.addEventListener('mousemove', (e) => {
                 if(!isDragging) return;
+                
                 const delta = startY - e.clientY;
                 startY = e.clientY;
                 vol = Math.min(1, Math.max(0, vol + delta * 0.01));
+                
                 const deg = (vol * 270) - 135;
                 if(this.ui.knobMarker) this.ui.knobMarker.style.transform = `translateX(-50%) rotate(${deg}deg)`;
-                this.network.send("VOLUME", { value: vol });
+                
+                // THROTTLE: Only send if 100ms passed
+                const now = Date.now();
+                if (now - lastVolTime > 100) {
+                    this.network.send("VOLUME", { value: vol });
+                    lastVolTime = now;
+                }
             });
+        }
+    }
+
+    // THIS METHOD IS NOW OUTSIDE setupUIEvents
+    async reloadLibrary(filterType) {
+        this.currentFilter = filterType;
+
+        // Visual toggle for buttons
+        ['ALL', 'LOCAL', 'SPOTIFY'].forEach(t => {
+            const btn = document.getElementById(`filter-${t.toLowerCase()}`);
+            if (btn) btn.classList.toggle('active', t === filterType);
+        });
+
+        // Show loader
+        if(this.ui.loader) {
+            this.ui.loader.style.display = 'flex';
+            this.ui.loader.style.opacity = 1;
+        }
+
+        await this.loadLibrary();
+
+        // Hide loader
+        if(this.ui.loader) {
+            this.ui.loader.style.opacity = 0;
+            setTimeout(() => (this.ui.loader.style.display = 'none'), 500);
         }
     }
 
@@ -405,22 +448,29 @@ class VinylApp {
 
     async loadLibrary() {
         try {
-            const res = await fetch('/api/library');
+            // Pass the filter to the API
+            const res = await fetch(`/api/library?filter=${this.currentFilter}`);
             const data = await res.json();
-            this.fullLibrary = data;
+            
+            // Update the master list
+            this.fullLibrary = data; 
             this.libraryLoaded = true;
 
-            document.getElementById('loader-overlay').style.display = 'none';
-
+            // Re-process the library (Sorting, Grouping, Chunking)
+            // This function already uses CONFIG correctly
+            this.processLibrary(this.currentSortMode);
+            
+            // Handle pending syncs or just enter overview
             if (this.pendingSyncData) {
                 this.restoreNavState(this.pendingSyncData);
                 this.pendingSyncData = null;
             } else {
-                this.processLibrary(CONFIG.SORT_MODES.RAW);
                 this.enterOverview();
             }
 
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            console.error("Error loading library:", e); 
+        }
     }
 
     processLibrary(mode) {

@@ -166,7 +166,7 @@ export class VinylPlayer {
         }
     }
 
-pause() {
+    pause() {
         // FIX: If the player was stopped (READY), start from the beginning
         // instead of just sending a "resume" command.
         if (this.state === P_STATES.READY) {
@@ -201,26 +201,27 @@ pause() {
         if (this.state === P_STATES.PLAYING && this.discMesh) {
             this.discMesh.rotation.y -= CONFIG.PLAYER.ROTATION_SPEED;
             
-            // Auto-stop logic
+            // REMOVED: The logic that checks totalDur vs elapsed time and calls this.stop().
+            // REASON: We want the server to dictate when the song is actually over.
+            // However, we DO need to move the tonearm visually.
+            
             const tracks = this.currentDiscData.tracks;
-            let totalDur = 0, currentDur = 0;
+            let totalDur = 0;
+            let currentDur = 0;
+            
             tracks.forEach((t, i) => {
-                const dur = t.duration || 180;
-                totalDur += dur;
-                if (i < this.currentTrackIndex) currentDur += dur;
+               const dur = t.duration || 180;
+               totalDur += dur;
+               if(i < this.currentTrackIndex) currentDur += dur; 
             });
-            const elapsed = (Date.now() - this.playbackStartTime)/1000 + this.trackOffset;
+
+            // For visual estimate only
+            const elapsed = this.getProgress(); 
             currentDur += elapsed;
             
-            const progress = currentDur / totalDur;
-
-            if (progress >= 1.0) {
-                this.stop();
-                if (this.onDiscFinish) this.onDiscFinish(); 
-            } else {
-                const angle = CONFIG.PLAYER.ANGLE_ARM_START + (progress * (CONFIG.PLAYER.ANGLE_ARM_END - CONFIG.PLAYER.ANGLE_ARM_START));
-                this.toneArm.rotation.y += (angle - this.toneArm.rotation.y) * 0.1;
-            }
+            const progress = Math.min(1, currentDur / totalDur);
+            const angle = CONFIG.PLAYER.ANGLE_ARM_START + (progress * (CONFIG.PLAYER.ANGLE_ARM_END - CONFIG.PLAYER.ANGLE_ARM_START));
+            this.toneArm.rotation.y += (angle - this.toneArm.rotation.y) * 0.1;
         }
     }
 
