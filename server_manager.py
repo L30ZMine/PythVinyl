@@ -4,7 +4,7 @@ import os
 import json
 import logging
 import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,7 +26,6 @@ class VinylServer:
         self.config_path = os.path.join(app_data_path, "debug_config.json")
         self.library_path = os.path.join(self.app_data_path, "library.json")
         
-        # PERSISTENT NAVIGATION STATE
         self.nav_state = {
             "sortMode": "RAW",
             "crateIndex": 0,
@@ -36,18 +35,13 @@ class VinylServer:
             "accentColor": "#44aa88" 
         }
         
-        self.track_cover_map = {} 
-        self.load_metadata_map()
-
-        # Shared State
         self.state = {
             "playing": False,
             "title": "Select a Track",
             "artist": "Unknown Artist",
             "cover_path": None
         }
-        
-        # Lookup Cache
+
         self.track_cover_map = {} 
         self.load_metadata_map()
 
@@ -101,7 +95,7 @@ class VinylServer:
             await websocket.accept()
             logger.info("Frontend Connected")
             
-            # SEND FULL SYNC ON CONNECT
+            # Send initial sync
             await websocket.send_text(json.dumps({
                 "status": "sync",
                 "playback": {
@@ -115,13 +109,16 @@ class VinylServer:
             # Background task to check for track finish
             async def audio_monitor():
                 while True:
+                    # Check if audio finished naturally
                     if self.audio.check_track_finished():
                         try:
-                            # Notify client that track finished naturally
+                            print("[WS] Detected finish, sending status: 'finished' to client.")
+                            self.state["playing"] = False
                             await websocket.send_text(json.dumps({"status": "finished"}))
-                        except Exception:
-                            break # Connection lost
-                    await asyncio.sleep(0.5)
+                        except Exception as e:
+                            print(f"[WS] Send Error: {e}")
+                            break 
+                    await asyncio.sleep(1.0) 
 
             monitor_task = asyncio.create_task(audio_monitor())
 
@@ -132,42 +129,48 @@ class VinylServer:
                     action = cmd.get("action")
                     payload = cmd.get("payload")
 
-                    # UPDATE Navigation State from Client
                     if action == "UPDATE_NAV":
                         self.nav_state.update(payload)
 
-                    if action == "PLAY":
+                    elif action == "PLAY":
                         if payload and "file_path" in payload:
                             fpath = payload["file_path"]
-                            try:
-                                self.audio.play(fpath, start_time=payload.get("start_time", 0))
-                                self.state["playing"] = True
-                                self.state["title"] = payload.get("title", "Unknown")
-                                self.state["artist"] = payload.get("artist", "")
-                                self.state["cover_path"] = self.track_cover_map.get(fpath, None)
+                            
+                            print(f"[WS] Received PLAY command for: {payload.get('title')}")
 
-                                await websocket.send_text(json.dumps({
-                                    "status": "playing", 
-                                    "track": self.state["title"],
-                                    "artist": self.state["artist"]
-                                }))
-                            except Exception as e:
-                                logger.error(f"Play Error: {e}")
+                            # Update local state first
+                            self.state["title"] = payload.get("title", "Unknown")
+                            self.state["artist"] = payload.get("artist", "")
+                            self.state["cover_path"] = self.track_cover_map.get(fpath, None)
+                            self.state["playing"] = True
+
+                            # Run in executor to not block async loop
+                            await asyncio.to_thread(self.audio.play, fpath, payload.get("start_time", 0))
+
+                            await websocket.send_text(json.dumps({
+                                "status": "playing", 
+                                "track": self.state["title"],
+                                "artist": self.state["artist"]
+                            }))
                     
                     elif action == "STOP":
-                        self.audio.stop()
+                        print("[WS] Received STOP command")
+                        await asyncio.to_thread(self.audio.stop)
                         self.state["playing"] = False
                         await websocket.send_text(json.dumps({"status": "stopped"}))
                     
                     elif action == "PAUSE":
-                        self.audio.pause()
+                        print("[WS] Received PAUSE command")
+                        await asyncio.to_thread(self.audio.pause)
                         await websocket.send_text(json.dumps({"status": "paused"}))
                     
                     elif action == "VOLUME":
-                        self.audio.set_volume(payload.get("value", 0.5))
+                        val = payload.get("value", 0.5)
+                        await asyncio.to_thread(self.audio.set_volume, val)
 
                     elif action == "SEEK":
-                        self.audio.seek(payload.get("time", 0))
+                        t = payload.get("time", 0)
+                        await asyncio.to_thread(self.audio.seek, t)
 
             except WebSocketDisconnect:
                 logger.info("Frontend Disconnected")

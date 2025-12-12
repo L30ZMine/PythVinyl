@@ -31,6 +31,9 @@ class VinylApp {
         this.scrollTarget = 0;
         this.scrollCurrent = 0;
 
+        // Track what we are playing currently to avoid DOM scraping
+        this.currentTrackInfo = { title: null, artist: null };
+
         // --- GIMBAL STATE ---
         this.isGimbalActive = false;
         this.gimbalStart = new THREE.Vector2();
@@ -41,7 +44,6 @@ class VinylApp {
         this.camPhi = 0;
         this.currentLookAt = new THREE.Vector3();
         
-        // Store current active settings
         this.activeGimbalConfig = CONFIG.GIMBAL.DEFAULT; 
 
         this.ui = {
@@ -167,6 +169,9 @@ class VinylApp {
             if (data.status === 'sync') {
                 if (data.playback && data.playback.isPlaying) {
                     this.hasPlayed = true;
+                    this.currentTrackInfo.title = data.playback.track;
+                    this.currentTrackInfo.artist = data.playback.artist;
+                    
                     this.ui.interface.classList.remove('hidden');
                     this.ui.pTitle.innerText = data.playback.track;
                     this.ui.pArtist.innerText = data.playback.artist;
@@ -183,6 +188,10 @@ class VinylApp {
 
             } else if (data.status === 'playing') {
                 this.ui.status.innerText = "Playing";
+                
+                this.currentTrackInfo.title = data.track;
+                this.currentTrackInfo.artist = data.artist || "";
+
                 this.ui.pTitle.innerText = data.track;
                 this.ui.pArtist.innerText = data.artist || "";
                 this.ui.iconPlay.classList.add('hidden');
@@ -198,31 +207,47 @@ class VinylApp {
                 this.updateTitleMarquee("", false);
 
             } else if (data.status === 'finished') {
-                // BUG FIX: LOGIC FOR AUTO-ADVANCE
+                console.log("[App] Received FINISHED signal from server");
+                // IMPORTANT: Pause local visual immediately
                 this.playNextTrack();
             }
         });
     }
 
     playNextTrack() {
-        if (!this.player || !this.player.currentDiscData) return;
+        if (!this.player || !this.player.currentDiscData) {
+            console.warn("[App] Cannot play next: No disc loaded in player.");
+            return;
+        }
         
-        const currentTitle = this.ui.pTitle.innerText;
+        const currentTitle = this.currentTrackInfo.title;
         const tracks = this.player.currentDiscData.tracks;
         
-        // Find current track index
-        const currentIndex = tracks.findIndex(t => t.title === currentTitle);
+        console.log(`[App] Attempting to find next track after: "${currentTitle}"`);
+
+        // Find current track index by title
+        let currentIndex = -1;
+        if (currentTitle) {
+            currentIndex = tracks.findIndex(t => t.title === currentTitle);
+        } else {
+            console.warn("[App] No current title tracked, guessing 0.");
+            currentIndex = 0;
+        }
         
+        console.log(`[App] Current Index found: ${currentIndex} / ${tracks.length - 1}`);
+
         if (currentIndex !== -1 && currentIndex < tracks.length - 1) {
             // Next track exists on this disc
             const nextTrack = tracks[currentIndex + 1];
+            console.log(`[App] Sending PLAY for next track: ${nextTrack.title}`);
             this.network.send("PLAY", { 
                 file_path: nextTrack.file_path, 
                 title: nextTrack.title, 
                 artist: this.activeAlbum.artist 
             });
         } else {
-            // End of disc, try switching disc
+            // End of disc
+            console.log("[App] End of disc reached. Calling handleDiscFinish().");
             this.handleDiscFinish();
         }
     }
@@ -278,8 +303,8 @@ class VinylApp {
         this.ui.crateNext.onclick = () => this.cycleCrate(1);
         document.getElementById('btn-play').onclick = () => this.player.pause();
         document.getElementById('btn-stop').onclick = () => this.player.stop();
-        document.getElementById('btn-next').onclick = () => this.playNextTrack(); // Use our new logic
-        document.getElementById('btn-prev').onclick = () => this.player.prevTrack(); // This assumes player has prev logic or we can add similar
+        document.getElementById('btn-next').onclick = () => this.playNextTrack(); 
+        document.getElementById('btn-prev').onclick = () => this.player.prevTrack(); 
         
         let isDragging = false; let startY = 0; let vol = 0.5;
         if (this.ui.volKnob) {
@@ -333,7 +358,6 @@ class VinylApp {
         });
 
         window.addEventListener('mousedown', (e) => {
-            // Updated condition: Allow gimbal on State 2 (Inspect) and 3 (Player)
             if (e.button === 1 && (this.stateIndex === STATES.INSPECT || this.stateIndex === STATES.PLAYER)) {
                 e.preventDefault();
                 this.startGimbal(e);
@@ -701,14 +725,11 @@ class VinylApp {
         else if (data.type === 'vinyl_surface') this.player.handleInput(intersects[0].point);
     }
 
-    // --- UPDATED GIMBAL LOGIC WITH PER-STATE CONFIG ---
-    
     startGimbal(e) {
        this.isGimbalActive = true;
        this.gimbalStart.set(e.clientX, e.clientY);
        document.body.style.cursor = "move";
        
-       // 1. Determine Current Config based on State
        if (this.stateIndex === STATES.INSPECT) {
            this.activeGimbalConfig = CONFIG.GIMBAL.INSPECT;
        } else if (this.stateIndex === STATES.PLAYER) {
@@ -717,11 +738,9 @@ class VinylApp {
            this.activeGimbalConfig = CONFIG.GIMBAL.DEFAULT;
        }
 
-       // 2. Setup Spherical Coords
        const offset = new THREE.Vector3().copy(this.camera.position).sub(this.currentLookAt);
        this.gimbalSpherical.setFromVector3(offset);
        
-       // 3. Sync
        this.targetTheta = this.gimbalSpherical.theta;
        this.targetPhi = this.gimbalSpherical.phi;
        this.camTheta = this.gimbalSpherical.theta;
@@ -733,8 +752,6 @@ class VinylApp {
 
     handleGimbalMove(e) {
        if (!this.isGimbalActive) return;
-       
-       // Use Active Config for Sensitivity
        const conf = this.activeGimbalConfig;
        
        const deltaX = (e.clientX - this.gimbalStart.x) * conf.SENSITIVITY;
@@ -743,7 +760,6 @@ class VinylApp {
        let theta = this.gimbalBaseTheta - deltaX;
        let phi = this.gimbalBasePhi - deltaY;
        
-       // Use Active Config for Limits
        const minTheta = this.gimbalBaseTheta - conf.LIMIT_AZIMUTH;
        const maxTheta = this.gimbalBaseTheta + conf.LIMIT_AZIMUTH;
        theta = Math.max(minTheta, Math.min(maxTheta, theta));
@@ -770,8 +786,7 @@ class VinylApp {
         this.crateGroup.visible = (newState === STATES.BROWSE);
         this.inspectGroup.visible = (newState === STATES.INSPECT);
         
-        // BUG FIX: Scroll Disconnect Logic
-        // When switching back to Overview from other states, reset scroll to 0 to ensure camera sees the crates.
+        // BUG FIX: Reset scroll when going back to Overview
         if (newState === STATES.OVERVIEW) {
             this.scrollTarget = 0;
             this.scrollCurrent = 0;
@@ -808,7 +823,6 @@ class VinylApp {
         const target = CONFIG.CAMERA.STATES[key];
         this.isTransitioning = true; 
 
-        // Determine LookAt Point for the state
         let lookX = target.look.x;
         let lookY = target.look.y;
         let lookZ = target.look.z;
@@ -823,17 +837,15 @@ class VinylApp {
             lookX = offX;
         }
 
-        // Store this for Gimbal logic
         this.currentLookAt.set(lookX, lookY, lookZ);
 
-        // Determine Destination Camera Position
         let destX, destY, destZ;
         if(this.stateIndex === STATES.BROWSE) {
             destX = lookX + CONFIG.CAMERA.BROWSE_OFFSET.x;
             destY = CONFIG.CAMERA.BROWSE_OFFSET.y;
             destZ = CONFIG.CAMERA.BROWSE_OFFSET.z;
         } else if (this.stateIndex === STATES.OVERVIEW) {
-            destX = lookX; // Camera moves with X
+            destX = lookX; 
             destY = target.pos.y;
             destZ = target.pos.z;
         } else {
@@ -848,7 +860,6 @@ class VinylApp {
             this.camera.position.set(destX, destY, destZ);
             this.camera.lookAt(this.currentLookAt);
             
-            // RESET GIMBAL
             this.isTransitioning = false;
             const offset = new THREE.Vector3().copy(this.camera.position).sub(this.currentLookAt);
             this.gimbalSpherical.setFromVector3(offset);
@@ -867,7 +878,6 @@ class VinylApp {
                 .easing(TWEEN.Easing.Cubic.InOut)
                 .onUpdate(() => this.camera.lookAt(this.currentLookAt))
                 .onComplete(() => { 
-                    // RESET GIMBAL ON ARRIVAL
                     this.isTransitioning = false; 
                     const offset = new THREE.Vector3().copy(this.camera.position).sub(this.currentLookAt);
                     this.gimbalSpherical.setFromVector3(offset);
@@ -1090,20 +1100,15 @@ class VinylApp {
             }
         }
         
-        // --- NEW GIMBAL UPDATE LOOP ---
         if (!this.isTransitioning) {
-            // Smoothly interpolate current sphericals to target
             this.camTheta += (this.targetTheta - this.camTheta) * CONFIG.GIMBAL.SMOOTHING;
             this.camPhi += (this.targetPhi - this.camPhi) * CONFIG.GIMBAL.SMOOTHING;
             
-            // Convert to Offset Vector
             this.gimbalSpherical.theta = this.camTheta;
             this.gimbalSpherical.phi = this.camPhi;
             this.gimbalSpherical.makeSafe();
             
             const offset = new THREE.Vector3().setFromSpherical(this.gimbalSpherical);
-            
-            // New Camera Position = LookAt Point + Offset
             const newPos = new THREE.Vector3().copy(this.currentLookAt).add(offset);
             
             this.camera.position.copy(newPos);
