@@ -238,6 +238,7 @@ class VinylApp {
 
         if (currentIndex !== -1 && currentIndex < tracks.length - 1) {
             // Next track exists on this disc
+            this.player.playTrack(currentIndex + 1, 0);
             const nextTrack = tracks[currentIndex + 1];
             console.log(`[App] Sending PLAY for next track: ${nextTrack.title}`);
             this.network.send("PLAY", { 
