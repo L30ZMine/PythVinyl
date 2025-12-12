@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vinyl 3D Stack</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="loader-overlay"><h2>LOADING SYSTEM...</h2></div>
+
+    <div id="ui-layer">
+        
+        <div id="header-bg"></div>
+
+        <div id="header">
+            <h1 id="app-title">Vinyl Stack</h1>
+            <div id="state-indicator">Ready</div>
+        </div>
+
+        <div id="filter-bar" class="hidden">
+            <div class="filter-group">
+                <span class="filter-label">SORT:</span>
+                <button class="filter-btn active" id="sort-artist">ARTIST</button>
+                <button class="filter-btn" id="sort-album">ALBUM</button>
+                <button class="filter-btn" id="sort-raw">RAW</button>
+            </div>
+
+            <div class="filter-separator">|</div>
+
+            <div class="filter-group">
+                <button class="filter-btn" id="toggle-order">A-Z</button>
+                <button class="filter-btn" id="toggle-group">FLOW</button>
+                <button class="filter-btn" id="toggle-scroll" title="Invert Scroll Direction">INV</button>
+            </div>
+        </div>
+
+        <div id="crate-prev" class="crate-nav hidden">❮</div>
+        <div id="crate-next" class="crate-nav hidden">❯</div>
+
+        <div id="player-interface" class="hidden">
+            <div class="player-card">
+                <div class="track-details">
+                    <div id="p-title" class="p-title">Select a Track</div>
+                    <div id="p-artist" class="p-artist">Unknown Artist</div>
+                    <div id="p-time" class="p-time">--:--</div>
+                </div>
+                <div class="controls-row">
+                    <button id="btn-prev" class="ctrl-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                    <button id="btn-play" class="ctrl-btn big">
+                        <svg id="icon-play" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        <svg id="icon-pause" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="btn-stop" class="ctrl-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg></button>
+                    <button id="btn-next" class="ctrl-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                </div>
+                <div class="volume-section">
+                    <div class="knob-container" id="vol-knob"><div class="knob-marker"></div></div>
+                    <span class="vol-label">VOL</span>
+                </div>
+            </div>
+        </div>
+
+        <nav id="navbar">
+            <button class="nav-btn active" data-state="0" id="nav-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>
+                <span>Coll.</span>
+            </button>
+            <button class="nav-btn disabled" data-state="1" id="nav-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+                <span>Browse</span>
+            </button>
+            <button class="nav-btn disabled" data-state="2" id="nav-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/></svg>
+                <span>View</span>
+            </button>
+            <button class="nav-btn disabled" data-state="3" id="nav-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
+                <span>Play</span>
+            </button>
+        </nav>
+
+        <div id="back-zone" class="hidden"></div>
+    </div>
+
+    <script type="module" src="/static/js/app.js?v=4"></script>
+</body>
+</html>

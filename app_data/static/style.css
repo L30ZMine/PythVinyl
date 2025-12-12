@@ -1,0 +1,180 @@
+:root {
+    --primary: #44aa88;
+    --bg-dark: rgba(20, 20, 20, 0.95);
+    --text-main: #ffffff;
+    --text-dim: #888888;
+    --font-ui: 'Segoe UI', sans-serif;
+    user-select: none;
+}
+
+body { margin: 0; overflow: hidden; background: #000; font-family: var(--font-ui); color: var(--text-main); user-select: none;}
+#ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* GRADIENT BLUR BACKGROUND */
+#header-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 180px; 
+    
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); 
+
+    mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+
+    /* Slight dark overlay to help text pop */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+
+    pointer-events: none;
+    z-index: 0; 
+}
+
+#header { 
+    position: absolute; 
+    top: 20px; 
+    width: 100%; 
+    text-align: center; 
+    pointer-events: none; 
+    z-index: 1; /* Sit on top of bg */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8); /* Added shadow for readability */
+}
+
+/* CHANGED: Brighter colors for visibility */
+#app-title { 
+    margin: 0; 
+    font-size: 1.2rem; 
+    text-transform: uppercase; 
+    color: #ffffff; /* Was var(--primary), now pure white for max contrast */
+    letter-spacing: 2px; 
+    font-weight: 900;
+    user-select: none;
+}
+
+#state-indicator { 
+    font-size: 0.9rem; 
+    color: #dddddd; /* Was var(--text-dim), now much brighter grey */
+    margin-top: 4px; 
+    font-weight: bold;
+    user-select: none;
+}
+
+/* NAVBAR */
+#navbar {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-dark); border: 1px solid #333; border-radius: 30px;
+    display: flex; gap: 10px; padding: 5px 15px; pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: all 0.3s;
+    z-index: 10;
+    user-select: none;
+}
+
+.nav-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 60px; height: 50px; cursor: pointer; transition: all 0.2s;
+    border-radius: 10px; opacity: 1;
+    user-select: none;
+}
+.nav-btn svg { width: 24px; height: 24px; margin-bottom: 2px; user-select: none;}
+.nav-btn span { font-size: 10px; font-weight: bold; user-select: none;}
+.nav-btn:hover { color: #fff; background: rgba(255,255,255,0.1); user-select: none;}
+.nav-btn.active { color: var(--primary); user-select: none;}
+
+.nav-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+/* PLAYER INTERFACE */
+#player-interface {
+    position: absolute; bottom: 120px; right: 40px; 
+    width: 300px; pointer-events: auto;
+    transition: opacity 0.5s, transform 0.5s;
+    border-left: 4px solid var(--primary);
+    z-index: 10;
+    user-select: none;
+}
+#player-interface.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; }
+
+.player-card {
+    background: var(--bg-dark); 
+    border-bottom-right-radius: 12px;
+    border-top-right-radius: 12px; 
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    user-select: none;
+}
+
+.track-details { margin-bottom: 20px; }
+.p-title { font-size: 1.1rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none;}
+.p-artist { color: var(--primary); font-size: 0.9rem; margin-top: 2px; user-select: none;}
+.p-time { color: var(--text-dim); font-size: 0.8rem; margin-top: 5px; font-family: monospace; user-select: none;}
+
+.controls-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; user-select: none;}
+.ctrl-btn {
+    background: transparent; border: 1px solid #444; color: #fff;
+    width: 60px; height: 60px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.ctrl-btn:hover { border-color: var(--primary); color: var(--primary); }
+.ctrl-btn.big { width: 60px; height: 60px; background: var(--primary); border: none; color: #000; }
+.ctrl-btn.big:hover { border-color: var(--primary); color: white; }
+.hidden { display: none !important; }
+
+/* VOLUME KNOB */
+.volume-section { display: flex; flex-direction: column; align-items: center; }
+.knob-container {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #444, #111);
+    border: 2px solid #333; position: relative; cursor: ns-resize;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.knob-marker {
+    width: 4px; height: 15px; background: var(--primary);
+    position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+    transform-origin: 50% 20px; border-radius: 2px;
+}
+.vol-label { font-size: 10px; color: #555; margin-top: 5px; font-weight: bold; }
+
+/* FILTERS */
+#filter-bar {
+    position: absolute; top: 80px; right: 40px;
+    display: flex; gap: 10px; align-items: center;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.filter-group { display: flex; gap: 5px; align-items: center; }
+.filter-separator { color: #444; font-size: 14px; margin: 0 5px; }
+
+.filter-label { font-size: 10px; color: #666; font-weight: bold; margin-right: 5px; }
+
+.filter-btn {
+    background: rgba(0,0,0,0.5); border: 1px solid #444; color: #aaa;
+    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold;
+    cursor: pointer; transition: 0.2s;
+}
+
+.filter-btn:hover { border-color: var(--primary); color: #fff; }
+.filter-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+
+/* CRATE NAV ARROWS */
+.crate-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 40px; color: rgba(255,255,255,0.3); 
+    cursor: pointer; pointer-events: auto; padding: 20px;
+    transition: all 0.3s;
+    z-index: 10;
+}
+.crate-nav:hover { color: var(--primary); background: rgba(0,0,0,0.5); }
+#crate-prev { left: 20px; }
+#crate-next { right: 20px; }
+
+#loader-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+    z-index: 9999; display: flex; align-items: center; justify-content: center; color: var(--primary);
+}
