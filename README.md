@@ -11,7 +11,7 @@ It combines a **Python** backend (for robust file scanning, metadata extraction,
 ### 🎧 The "Analog" Experience
 
   * **Crate Digging:** Browse your library as physical crates. Flip through records with realistic physics and lifting animations.
-  * ![crate digging image](https://github.com/L30ZMine/PythVinyl/blob/main/github_images/%7B2A60A6D1-DAF0-49C2-B114-633C5B5BEA30%7D.png?raw=true)
+  * ![crate digging image](/github_images/{2A60A6D1-DAF0-49C2-B114-633C5B5BEA30}.png)
   * **Gatefold Inspection:** Click an album to pull it out. Watch the sleeve open up to reveal the disc and tracklist.
   * **Virtual Turntable:** A fully animated 3D turntable. Watch the tone arm move and the record spin.
   * **Needle Drop:** Click anywhere on the vinyl surface to seek to that timestamp, calculated by the groove position.
