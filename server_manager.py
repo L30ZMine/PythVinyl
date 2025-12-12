@@ -3,6 +3,7 @@ import threading
 import os
 import json
 import logging
+import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -26,9 +27,8 @@ class VinylServer:
         self.library_path = os.path.join(self.app_data_path, "library.json")
         
         # PERSISTENT NAVIGATION STATE
-        # Fixed: Added accentColor to state tracking
         self.nav_state = {
-            "sortMode": "RAW",   # <--- CHANGED FROM "ARTIST"
+            "sortMode": "RAW",
             "crateIndex": 0,
             "albumId": None,
             "discIndex": 0,
@@ -112,6 +112,19 @@ class VinylServer:
                 "navigation": self.nav_state
             }))
 
+            # Background task to check for track finish
+            async def audio_monitor():
+                while True:
+                    if self.audio.check_track_finished():
+                        try:
+                            # Notify client that track finished naturally
+                            await websocket.send_text(json.dumps({"status": "finished"}))
+                        except Exception:
+                            break # Connection lost
+                    await asyncio.sleep(0.5)
+
+            monitor_task = asyncio.create_task(audio_monitor())
+
             try:
                 while True:
                     data = await websocket.receive_text()
@@ -148,7 +161,6 @@ class VinylServer:
                     
                     elif action == "PAUSE":
                         self.audio.pause()
-                        # Notify client (optional, mostly handled by local state toggle in JS)
                         await websocket.send_text(json.dumps({"status": "paused"}))
                     
                     elif action == "VOLUME":
@@ -159,6 +171,8 @@ class VinylServer:
 
             except WebSocketDisconnect:
                 logger.info("Frontend Disconnected")
+            finally:
+                monitor_task.cancel()
 
         return app
 

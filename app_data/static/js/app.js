@@ -196,8 +196,35 @@ class VinylApp {
                 this.ui.iconPlay.classList.remove('hidden');
                 this.ui.iconPause.classList.add('hidden');
                 this.updateTitleMarquee("", false);
+
+            } else if (data.status === 'finished') {
+                // BUG FIX: LOGIC FOR AUTO-ADVANCE
+                this.playNextTrack();
             }
         });
+    }
+
+    playNextTrack() {
+        if (!this.player || !this.player.currentDiscData) return;
+        
+        const currentTitle = this.ui.pTitle.innerText;
+        const tracks = this.player.currentDiscData.tracks;
+        
+        // Find current track index
+        const currentIndex = tracks.findIndex(t => t.title === currentTitle);
+        
+        if (currentIndex !== -1 && currentIndex < tracks.length - 1) {
+            // Next track exists on this disc
+            const nextTrack = tracks[currentIndex + 1];
+            this.network.send("PLAY", { 
+                file_path: nextTrack.file_path, 
+                title: nextTrack.title, 
+                artist: this.activeAlbum.artist 
+            });
+        } else {
+            // End of disc, try switching disc
+            this.handleDiscFinish();
+        }
     }
 
     setupUIEvents() {
@@ -251,8 +278,8 @@ class VinylApp {
         this.ui.crateNext.onclick = () => this.cycleCrate(1);
         document.getElementById('btn-play').onclick = () => this.player.pause();
         document.getElementById('btn-stop').onclick = () => this.player.stop();
-        document.getElementById('btn-next').onclick = () => this.player.nextTrack();
-        document.getElementById('btn-prev').onclick = () => this.player.prevTrack();
+        document.getElementById('btn-next').onclick = () => this.playNextTrack(); // Use our new logic
+        document.getElementById('btn-prev').onclick = () => this.player.prevTrack(); // This assumes player has prev logic or we can add similar
         
         let isDragging = false; let startY = 0; let vol = 0.5;
         if (this.ui.volKnob) {
@@ -639,8 +666,10 @@ class VinylApp {
             const currentDiscIdx = this.player.currentDiscData.disc_number - 1;
             const nextDiscIdx = currentDiscIdx + 1;
             if (nextDiscIdx < this.activeAlbum.discs.length) {
+                // Advance to next Disc
                 this.enterPlayer(this.activeAlbum.discs[nextDiscIdx]);
             } else {
+                // End of Album
                 this.player.stop();
             }
         }
@@ -741,13 +770,19 @@ class VinylApp {
         this.crateGroup.visible = (newState === STATES.BROWSE);
         this.inspectGroup.visible = (newState === STATES.INSPECT);
         
+        // BUG FIX: Scroll Disconnect Logic
+        // When switching back to Overview from other states, reset scroll to 0 to ensure camera sees the crates.
+        if (newState === STATES.OVERVIEW) {
+            this.scrollTarget = 0;
+            this.scrollCurrent = 0;
+        }
+
         if (newState === STATES.PLAYER) {
             if(this.ui.interface) this.ui.interface.classList.remove('hidden');
         } else {
             if(this.ui.interface) this.ui.interface.classList.add('hidden');
         }
 
-        // Fixed: CSS Visiblity
         if (newState === STATES.BROWSE || newState === STATES.OVERVIEW) {
             this.ui.filterBar.classList.remove('hidden');
             this.ui.filterBar.style.display = 'flex';

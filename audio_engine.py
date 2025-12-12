@@ -62,3 +62,13 @@ class AudioEngine:
         print(f"Seeking to {timestamp}s")
         # We re-call play with the start offset
         self.play(self.current_file, start_time=timestamp)
+
+    def check_track_finished(self):
+        """
+        Checks if the track has finished playing naturally.
+        Returns True if we logically think we are playing, but the mixer has stopped.
+        """
+        if self.is_playing and not pygame.mixer.music.get_busy():
+            self.is_playing = False
+            return True
+        return False
