@@ -188,6 +188,14 @@ class VinylApp {
 
             } else if (data.status === 'playing') {
                 this.ui.status.innerText = "Playing";
+
+                // Otherwise, keep the currently cached info (e.g. on resume).
+                if (data.track) {
+                    this.currentTrackInfo.title = data.track;
+                    this.currentTrackInfo.artist = data.artist || "";
+                    this.ui.pTitle.innerText = data.track;
+                    this.ui.pArtist.innerText = data.artist || "";
+                }
                 
                 this.currentTrackInfo.title = data.track;
                 this.currentTrackInfo.artist = data.artist || "";
@@ -302,10 +310,36 @@ class VinylApp {
 
         this.ui.cratePrev.onclick = () => this.cycleCrate(-1);
         this.ui.crateNext.onclick = () => this.cycleCrate(1);
-        document.getElementById('btn-play').onclick = () => this.player.pause();
+        document.getElementById('btn-play').onclick = () => {
+            this.player.pause();
+            
+            // Check the local player state immediately
+            const isPlaying = (this.player.state === 'PLAYING');
+
+            if (isPlaying) {
+                // Update Icons
+                this.ui.iconPlay.classList.add('hidden');
+                this.ui.iconPause.classList.remove('hidden');
+                this.ui.status.innerText = "Playing";
+                
+                // Force Marquee Restart using cached info
+                const t = this.currentTrackInfo.title || "Unknown Track";
+                const a = this.currentTrackInfo.artist || "";
+                this.updateTitleMarquee(`${t} - ${a}`, true);
+            } else {
+                // Update Icons
+                this.ui.iconPlay.classList.remove('hidden');
+                this.ui.iconPause.classList.add('hidden');
+                this.ui.status.innerText = "Paused";
+                
+                // Stop Marquee
+                this.updateTitleMarquee("", false);
+            }
+        };
         document.getElementById('btn-stop').onclick = () => this.player.stop();
         document.getElementById('btn-next').onclick = () => this.playNextTrack(); 
         document.getElementById('btn-prev').onclick = () => this.player.prevTrack(); 
+
         
         let isDragging = false; let startY = 0; let vol = 0.5;
         if (this.ui.volKnob) {
