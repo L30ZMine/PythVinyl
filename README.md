@@ -11,15 +11,15 @@ It combines a **Python** backend (for robust file scanning, metadata extraction,
 ### 🎧 The "Analog" Experience
 
   * **Robust Collection System:** Enjoy many different collections and filters to scroll through.
-  * <img width="400px" src="/github_images/{B1FFA4F2-A1FB-4433-BF97-0818571FDB73}.png"/>
+<img width="400px" src="/github_images/{B1FFA4F2-A1FB-4433-BF97-0818571FDB73}.png"/>
   * **Crate Digging:** Browse your library as physical crates. Flip through records with realistic physics and lifting animations.
-  * <img width="400px" src="/github_images/{2A60A6D1-DAF0-49C2-B114-633C5B5BEA30}.png"/>
-  * <img width="400px" src="/github_images/{ACA00C66-FA63-41CA-A196-1B40D0AECFAF}.png"/>
+<img width="400px" src="/github_images/{2A60A6D1-DAF0-49C2-B114-633C5B5BEA30}.png"/>
+<img width="400px" src="/github_images/{ACA00C66-FA63-41CA-A196-1B40D0AECFAF}.png"/>
   * **Gatefold Inspection:** Click an album to pull it out. Watch the sleeve open up to reveal the disc and tracklist.
-  * <img width="400px" src="/github_images/{23C2EAE9-A84B-4702-87BD-5EE7A39584CA}.png"/>
+<img width="400px" src="/github_images/{23C2EAE9-A84B-4702-87BD-5EE7A39584CA}.png"/>
   * **Virtual Turntable:** A fully animated 3D turntable. Watch the tone arm move and the record spin.
   * **Needle Drop:** Click anywhere on the vinyl surface to seek to that timestamp, calculated by the groove position.
-  * <img width="400px" src="/github_images/{6D8528F4-7FC0-48A4-ACBA-1F668421EDE4}.png"/>
+<img width="400px" src="/github_images/{6D8528F4-7FC0-48A4-ACBA-1F668421EDE4}.png"/>
 
 ### 🛠️ Powerful Backend
 
