@@ -11,7 +11,7 @@ It combines a **Python** backend (for robust file scanning, metadata extraction,
 ### 🎧 The "Analog" Experience
 
   * **Robust Collection System:** Enjoy many different collections and filters to scroll through.
-  * <picture><source srcset="/github_images/{B1FFA4F2-A1FB-4433-BF97-0818571FDB73}.png"></picture>
+  * <picture><source media="(width:200px)" srcset="/github_images/{B1FFA4F2-A1FB-4433-BF97-0818571FDB73}.png"></picture>
   * **Crate Digging:** Browse your library as physical crates. Flip through records with realistic physics and lifting animations.
   * ![crate digging image](/github_images/{2A60A6D1-DAF0-49C2-B114-633C5B5BEA30}.png)
   * ![crate digging image](/github_images/{ACA00C66-FA63-41CA-A196-1B40D0AECFAF}.png)
