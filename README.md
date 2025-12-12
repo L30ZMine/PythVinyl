@@ -4,7 +4,7 @@
 
 It combines a **Python** backend (for robust file scanning, metadata extraction, and audio processing) with a high-fidelity **Three.js** frontend to create an immersive 3D music player. Browse your collection in crates, inspect gatefold covers, and drop the needle on a virtual turntable.
 
-<img width="600px" src="/github_images/{1136324B-161B-4EFE-94C3-C016033CC659}.png"/>
+<img width="600px" src="/github_images/{3EE99E41-D2B6-46B7-BE4B-7EB990D52FEF}.png"/>
 
 -----
 
