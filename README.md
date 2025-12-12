@@ -134,15 +134,6 @@ You can tweak the 3D experience by editing `config.js`.
 
 -----
 
-## 🗺️ Roadmap
-
-  - [ ] **Drag & Drop Queue:** Add a queueing system to line up the next record.
-  - [ ] **Lyrics Integration:** Fetch and display lyrics on the inner sleeve.
-  - [ ] **Shader Improvements:** Add realistic vinyl reflection and anisotropic lighting grooves.
-  - [ ] **Soundcloud/Spotify:** Integration for streaming sources.
-
------
-
 ## 🤝 Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
