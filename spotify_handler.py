@@ -6,9 +6,10 @@ import time
 
 class SpotifyHandler:
     def __init__(self, cache_path):
-        self.client_id = "your client id here"
-        self.client_secret = "your client secret here"
-        self.redirect_uri = "http://127.0.0.1/8080"
+        # REPLACE THESE WITH YOUR CREDENTIALS!!!!!!!!!!!!!!!!!!!!
+        self.client_id = "your client id"
+        self.client_secret = "your client secret"
+        self.redirect_uri = "http://127.0.0.1:8888/callback"
         
         self.scope = "user-read-playback-state user-modify-playback-state user-read-currently-playing user-library-read"
         self.sp = None
